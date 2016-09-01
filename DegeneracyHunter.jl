@@ -303,6 +303,8 @@ end
 
 function printInactiveEquations(m2::Model, dd::DegenData, epsilon::Float64=1E-6, f=STDOUT)
 
+	println(f,"Inactive Equations: ")
+
 	inactive = ((dd.gUB - dd.g) .> epsilon) & ((dd.g - dd.gLB) .> epsilon)
 
 	for i = 1:length(dd.g)
@@ -536,6 +538,9 @@ function degeneracyHunter(m::Model, ds::DegenSettings, f)
 	print(f,"Adding Jacobian elements for bounds... ")
 	tic()
 
+	# Number of constraints
+	n = length(dd.g)
+
 	dd.bMap = find(bActive)
 	for i = 1:length(dd.bMap)
 		j = dd.bMap[i]
@@ -546,9 +551,6 @@ function degeneracyHunter(m::Model, ds::DegenSettings, f)
 
 	tm = toq()
 	println(f,string(tm," seconds"))
-
-	# Number of constraints
-	n = length(dd.g)
 
 	print(f,"Assembling J_sparse... ")
 	tic()

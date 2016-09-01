@@ -57,5 +57,5 @@ tm = toq()
 DegeneracyHunter.printInactiveEquations(m)
 
 # Package and print problem size information
-ps = assembleProblemStats(m,status,tm)
-printProblemStats(ps)
+ps = DegeneracyHunter.assembleProblemStats(m,status,tm)
+DegeneracyHunter.printProblemStats(ps)
