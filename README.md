@@ -48,7 +48,21 @@ end
 ### Create and initialize model
 ```
 m = lp1()
-initialize!(m) 
+initialize!(m)
+print(m)
+```
+
+**Output:**
+```
+Min x[1] + x[2] + x[3]
+Subject to
+ x[1] + x[2] ≥ 1
+ x[1] + x[2] + x[3] = 1
+ x[2] - 2 x[3] ≤ 1
+ x[1] + x[3] ≥ 1
+ x[1] + x[2] + x[3] = 1
+ 0 ≤ x[i] ≤ 5 ∀ i ∈ {1,2,3}
+ 0 ≤ y ≤ 0
 ```
 
 ### Check initial point
@@ -56,7 +70,7 @@ initialize!(m)
 DegeneracyHunter.printVariableDiagnostics(m)
 ```
 
-Output:
+**Output:**
 ```
 Uninitialized Variables: 
 y
@@ -71,7 +85,7 @@ Print equations with absolute residuals greater than 0.001
 DegeneracyHunter.printInfeasibleEquations(m, 0.001)
 ```
 
-Output:
+**Output:**
 ```
 Infeasible equations: 
 r[4] = -1.0
@@ -103,11 +117,15 @@ Use default settings
 DegeneracyHunter.degeneracyHunter(m)
 ```
 
-Output:
+**Output:**
 ```
 ******************************************
 Welcome to Degeneracy Hunter!
- 
+```
+
+
+Option values used:
+```
 Options: 
 includeBounds = true
 includeWeaklyActive = true
@@ -115,8 +133,10 @@ removeFixedVar = true
 epsiActive = 1.0e-6
 epsiLambda = 1.0e-6
 lambdaM = 100000.0
- 
- 
+```
+
+Smallest and largest (in magnitude) non-zero Jacobian elements.
+```
 Smallest non-zero element in Jacobian = 1.0
 Variable: 
 x[1] = x[1]
@@ -128,8 +148,10 @@ Variable:
 x[3] = x[3]
 Equation: 
 x[2] - 2 x[3] ≤ 1
- 
- 
+```
+
+Information about problem size:
+``` 
 (Weakly) Active Inequality Constraints: 0
 Inactive Inequality Constraints: 3
 Equality Constraints: 2
@@ -137,10 +159,17 @@ Equality Constraints: 2
 Variables: 4
 (Weakly) Active Variable Bounds: 4
 Fixed Variables: 1
- 
+```
+
+Time to complete some behind-the-scenes steps:
+```
 Adding Jacobian elements for bounds... 4.589e-6 seconds
 Assembling J_sparse... 2.844e-6 seconds
 Assembling J_active... 4.61e-6 seconds
+```
+
+Output from Gurobi. IDS calculation is posed as a MILP.
+```
 Optimize a model with 39 rows, 20 columns and 84 nonzeros
 Coefficient statistics:
   Matrix range    [1e+00, 1e+05]
@@ -165,7 +194,14 @@ Thread count was 2 (of 2 available processors)
 
 Optimal solution found (tolerance 1.00e-04)
 Best objective 2.000000000000e+00, best bound 2.000000000000e+00, gap 0.0%
+```
+
+```
 Identified 2 candidate constraints/bounds.
+```
+
+IDS information from initial serach. The values for ``l`` show how the equations are added together to create rank deficiency.
+```
 Degenerate set from candidate search:
 IDS 0...
 y = 1.0000, l = -1.0000  	 **********************************
@@ -192,14 +228,22 @@ Involved variables:
 x[1] = x[1] = 0.0  	 [0.0,5.0]
 x[2] = x[2] = 0.0  	 [0.0,5.0]
 x[3] = x[3] = 0.0  	 [0.0,5.0]
- 
+```
 
+Information on the MILP problem size for additional searches:
+```
 nVar = 3
 nLambda = 5
 	 Constraints = 2
 	 Variable Bounds = 3
 
 Setting up MILP... 9.6227e-5 seconds
+```
+
+For each candidate equation, attempt to compute an IDS where l = 1 for said equation. If the MILP is feasible, an IDS exists containing this equation.
+
+Gurobi results for candidate 1:
+```
 Optimize a model with 13 rows, 10 columns and 29 nonzeros
 Coefficient statistics:
   Matrix range    [1e+00, 1e+05]
@@ -214,6 +258,10 @@ Explored 0 nodes (0 simplex iterations) in 0.00 seconds
 Thread count was 1 (of 2 available processors)
 
 Optimal solution found (tolerance 1.00e-04)
+```
+
+IDS containing candidate 1:
+```
 Best objective 2.000000000000e+00, best bound 2.000000000000e+00, gap 0.0%
 IDS 1...
 y = 1.0000, l = 1.0000  	 **********************************
@@ -240,7 +288,10 @@ Involved variables:
 x[1] = x[1] = 0.0  	 [0.0,5.0]
 x[2] = x[2] = 0.0  	 [0.0,5.0]
 x[3] = x[3] = 0.0  	 [0.0,5.0]
- 
+```
+
+Repeat for candidate 2:
+```
 Optimize a model with 13 rows, 10 columns and 29 nonzeros
 Coefficient statistics:
   Matrix range    [1e+00, 1e+05]
@@ -256,6 +307,10 @@ Thread count was 1 (of 2 available processors)
 
 Optimal solution found (tolerance 1.00e-04)
 Best objective 2.000000000000e+00, best bound 2.000000000000e+00, gap 0.0%
+```
+
+Print IDS containing candidate 2:
+```
 IDS 2...
 y = 1.0000, l = -1.0000  	 **********************************
 Constraint 1...
@@ -283,6 +338,12 @@ x[2] = x[2] = 0.0  	 [0.0,5.0]
 x[3] = x[3] = 0.0  	 [0.0,5.0]
 ```
 
+Finished iterative over candidate equations. Done.
+```
+Leaving Degeneracy Hunter.
+***************************
+```
+
 ### Solve model
 solve(m)
 
@@ -291,15 +352,19 @@ solve(m)
 DegeneracyHunter.degeneracyHunter(m)
 ```
 
-Output:
+**Output:**
 ```
 Inactive Equations: 
 x[2] - 2 x[3] ≤ 1
 ```
 
 ### Print problem statistics
+```
+ps = DegeneracyHunter.assembleProblemStats(m,status,tm)
+DegeneracyHunter.printProblemStats(ps)
+```
 
-Output:
+**Output:**
 ```
 Continous Variables (total): 4
 	 Fixed: 1
