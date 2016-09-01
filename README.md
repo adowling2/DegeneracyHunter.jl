@@ -345,7 +345,9 @@ Leaving Degeneracy Hunter.
 ```
 
 ### Solve model
+```
 solve(m)
+```
 
 ### Print inactive constraints
 ```
