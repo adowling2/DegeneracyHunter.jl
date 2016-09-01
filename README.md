@@ -4,7 +4,8 @@ Creating good optimization models is difficult. Degeneracy Hunter is a collectio
 * Initial point analysis: display uninitialized variables and values violating bounds 
 * Print infeasible constraint residuals
 * Print inactive inequality constraints
-* Determine Irreducible Set of Infeasible Equations (original *Degeneracy Hunter*)
+* Determine irreducible sets of degenerate (i.e, linearly dependent) equation (original *Degeneracy Hunter*)
+* Determine and print problem size and degree of freedom information
 
 ## Degeneracy Hunter Algorithms
 
