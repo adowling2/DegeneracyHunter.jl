@@ -3,7 +3,7 @@ module DegeneracyHunter
 export IrreducibleDegenerateSet, DegenSettings, DegenData, printBound, printVariablesInEquation,
 	printIDS, degeneracyHunter, printInfeasibleEquations, printInactiveEquations,
 	checkVarBounds, printRows, ProblemStats, assembleProblemStats, stringProblemStats, printProblemStats,
-	printVariableDiagnostics
+	printVariableDiagnostics, round_to_bounds!
 
 importall JuMP
 import MathProgBase
@@ -83,16 +83,12 @@ function DegenData()
 						0)
 end
 
-function DegenData(m::Model, f=STDOUT)
+function DegenData(m::Model, f=STDOUT, status::Symbol=:Unknown)
 
 	dd = DegenData()
 
 # Select point to analyze
-	if(typeof(m.internalModel) == Void)
-		dd.x = m.colVal
-	else
-		dd.x = MathProgBase.getsolution(m.internalModel)
-	end
+	dd.x = get_x(m, status)
 
 	dd.nVar = length(dd.x)
 
@@ -107,6 +103,17 @@ function DegenData(m::Model, f=STDOUT)
 
 	return dd
 
+end
+
+function get_x(m::Model, status::Symbol = :Unknown)
+	if(typeof(m.internalModel) == Void || status == :InfeasibleOrUnbounded || status == :Unsolved)
+		x = m.colVal
+	else
+	# Note: getsolution will throw an error if model is infeasible or unbounded with Gurobi
+		x = MathProgBase.getsolution(m.internalModel)
+	end
+	
+	return x
 end
 
 function processNonlinearModel!(m::Model, dd::DegenData, f=STDOUT)
@@ -178,12 +185,50 @@ end
 ###############
 ##### Exported functions for model diagnostics
 
-function printVariableDiagnostics(m::Model, epsilon::Float64=1.0E-6, f=STDOUT)
-	if(typeof(m.internalModel) == Void)
-		x = m.colVal
-	else
-		x = MathProgBase.getsolution(m.internalModel)
+function round_to_bounds!(m::Model, epsilon::Float64=1.0E-6, f=STDOUT)
+	# This function rounds each element of the solution vector to the closest bound if
+	# it is within epsilon.
+	# Why is this necessary? Some solvers (e.g., IPOPT) give solutions that are slightly
+	# infeasible or violate bounds. This is problematic in a meta-algorithm with calls
+	# to other solvers.
+	
+	x = get_x(m, :Unsolved)
+	
+	up = m.colUpper
+	lo = m.colLower
+	
+	for i = 1:length(x)
+	
+		v = Variable(m, i)
+	
+		if(up[i] < lo[i])
+			println(f,"Warning: Upper bound (",up[i],") is smaller than lower bound (",lo[i],") for variable ",v)
+		end
+	
+		x_ = NaN
+	
+		if(x[i] > up[i])
+			x_ = up[i]
+		elseif(x[i] < lo[i])
+			x_ = lo[i]
+		elseif(up[i] - x[i] < epsilon)
+			x_ = up[i]
+		elseif(x[i] - lo[i] < epsilon)
+			x_ = lo[i]
+		end
+		
+		if(!isnan(x_))
+			setvalue(v, x_)
+		end
+	
 	end
+	
+	return nothing
+
+end
+
+function printVariableDiagnostics(m::Model, epsilon::Float64=1.0E-6, f=STDOUT, status::Symbol=:Unknown)
+	x = get_x(m, status)
 
 	println(f,"Uninitialized Variables: ")
 	for i = 1:length(x)
@@ -229,10 +274,10 @@ function printVariableDiagnostics(m::Model, epsilon::Float64=1.0E-6, f=STDOUT)
 
 end
 
-function printInfeasibleEquations(m2::Model, eqns, f=STDOUT)
+function printInfeasibleEquations(m2::Model, eqns, f=STDOUT, status::Symbol=:Unknown)
 
-	dd = DegenData(m2)
-	return printInfeasibleEquations(m2, dd, eqns, f=STDOUT)
+	dd = DegenData(m2, status)
+	return printInfeasibleEquations(m2, dd, eqns, f)
 
 end
 
@@ -257,9 +302,9 @@ function printInfeasibleEquations(m2::Model, dd::DegenData, eqns, f=STDOUT)
 
 end
 
-function printInfeasibleEquations(m2::Model, epsilon::Float64, f=STDOUT)
+function printInfeasibleEquations(m2::Model, epsilon::Float64, f=STDOUT, status::Symbol=:Unknown)
 
-	dd = DegenData(m2, f)
+	dd = DegenData(m2, f, status)
 	return printInfeasibleEquations(m2, dd, epsilon, f)
 end
 
@@ -863,12 +908,8 @@ function assembleProblemStats(m::Model, status=:Unsolved, solveTime=0.0)
 	# This portion of code converts m into an NLP
 	d = JuMP.NLPEvaluator(m)
 	MathProgBase.initialize(d, [:ExprGraph, :Jac])
-	if(typeof(m.internalModel) == Void || status == :InfeasibleOrUnbounded)
-		x = m.colVal
-	else
-		# Note: getsolution will throw an error if model is infeasible or unbounded with Gurobi
-		x = MathProgBase.getsolution(m.internalModel)
-	end
+	
+	x = get_x(m, status)
 
 	g = zeros(n,1)
 	MathProgBase.eval_g(d,g,x)
