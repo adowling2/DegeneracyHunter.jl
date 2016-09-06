@@ -22,3 +22,23 @@ m = Model(solver=IpoptSolver())
 solve(m)
 
 DegeneracyHunter.printInfeasibleEquations(m, 1E-10)
+
+println("Manually check constrain violations")
+
+r = zeros(5)
+a_ = zeros(5)
+for i = 1:5
+	a_[i] = getvalue(a[i])
+end	
+z_ = getvalue(z)
+y_ = getvalue(y)
+
+r[1] = max(10 - a_[1] - a_[2] + a_[3], 0)
+r[2] = max(a_[2] + a_[2]*y_ - a_[1]*a_[4], 0)
+r[3] = a_[3]*a_[2] + a_[1]*a_[4] - a_[5]
+r[4] = z_ - sum(a_) + 0.001*sum(a_.^2)
+r[5] = a_[3] + a_[4] - 10*y_
+
+for i = 1:5
+	println("r[",i,"] = ",r[i])
+end
