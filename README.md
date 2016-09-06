@@ -347,12 +347,14 @@ Leaving Degeneracy Hunter.
 
 ### Solve model
 ```
-solve(m)
+tic()
+status = solve(m)
+tm = toq()
 ```
 
 ### Print inactive constraints
 ```
-DegeneracyHunter.degeneracyHunter(m)
+DegeneracyHunter.printInactiveEquations(m)
 ```
 
 **Output:**
