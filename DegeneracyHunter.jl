@@ -95,10 +95,16 @@ function DegenData(m::Model, f=STDOUT, status::Symbol=:Unknown)
 # Evaluate constraint bounds
 	(dd.gLB, dd.gUB) = JuMP.constraintbounds(m)
 
-	if(MathProgBase.numlinconstr(m) == MathProgBase.numconstr(m))
+	if(!m.internalModelLoaded)
+		JuMP.build(m)
+	end
+	
+	if(typeof(m.internalModel) <: MathProgBase.SolverInterface.AbstractLinearQuadraticModel)
 		processLinearModel!(m, dd, f)
-	else
+	elseif(typeof(m.internalModel) <: MathProgBase.SolverInterface.AbstractNonlinearModel)
 		processNonlinearModel!(m, dd, f)
+	else
+		println("Warning: Conic models are not yet supported!")
 	end
 
 	return dd
