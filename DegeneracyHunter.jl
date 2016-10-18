@@ -7,7 +7,7 @@ export IrreducibleDegenerateSet, DegenSettings, DegenData, printBound, printVari
 
 importall JuMP
 import MathProgBase
-using Gurobi
+# using Gurobi
 
 ##############
 ##### Functions and Types for setup
@@ -694,8 +694,8 @@ function setupMILP(dd::DegenData, ds::DegenSettings)
 
 	M = ds.lambdaM
 
-	m2 = Model(solver=GurobiSolver(IntFeasTol=1E-6, NumericFocus=3))
-	#m2 = Model()
+	#m2 = Model(solver=GurobiSolver(IntFeasTol=1E-6, NumericFocus=3))
+	m2 = Model()
 	L = 1:dd.nLambda
 	@variable(m2,y[L],Bin)
 	@variable(m2, -M <= lambda[L] <= M)
@@ -765,7 +765,8 @@ function findCandidates(dd::DegenData, ds::DegenSettings, explicit::Bool)
 
 	M = ds.lambdaM
 
-	m2 = Model(solver=GurobiSolver(IntFeasTol=1E-6, NumericFocus=3))
+	#m2 = Model(solver=GurobiSolver(IntFeasTol=1E-6, NumericFocus=3))
+	m2 = Model()
 	L = 1:dd.nLambda
 	@variable(m2, -M - mSmall <= lambda[L] <= M + mSmall)
 	@variable(m2, yPos[i=L], Bin)
