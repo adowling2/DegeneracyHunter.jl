@@ -35,3 +35,11 @@ for i in 1:length(aOpt)
 		(objValues[i,j], zValues[:,i,j], status) = solveOptProb1(aOpt[i],bOpt[j])
 	end
 end
+
+println("objValues = ")
+println(objValues)
+println(" ")
+
+println("zValues = ")
+println(zValues)
+println(" ")

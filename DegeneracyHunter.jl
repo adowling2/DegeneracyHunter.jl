@@ -23,13 +23,14 @@ type DegenSettings
 	includeBounds::Bool
 	includeWeaklyActive::Bool
 	removeFixedVar::Bool
+	onlyCandidateSearch::Bool
 	epsiActive::Float64
 	epsiLambda::Float64
 	lambdaM::Float64
 end
 
 function DegenSettings()
-	return DegenSettings(false, true, true, 1E-6, 1E-6, 1.0E5)
+	return DegenSettings(false, true, true, true, 1E-6, 1E-6, 1.0E5)
 end
 
 type DegenData
@@ -62,6 +63,7 @@ type DegenData
 	nLambda::Int64
 	nVarActive::Int64
 	nVar::Int64
+	nConstr::Int64
 
 end
 
@@ -78,6 +80,7 @@ function DegenData()
 						Int64[],
 						Int64[],
 						Int64[],
+						0,
 						0,
 						0,
 						0)
@@ -99,13 +102,20 @@ function DegenData(m::Model, f=STDOUT, status::Symbol=:Unknown)
 		JuMP.build(m)
 	end
 	
-	if(typeof(m.internalModel) <: MathProgBase.SolverInterface.AbstractLinearQuadraticModel)
+	if(typeof(m.internalModel) == MathProgBase.SolverInterface.NonlinearToLPQPBridge)
+		processNonlinearModel!(m, dd, f)
+	
+	elseif(typeof(m.internalModel) <: MathProgBase.SolverInterface.AbstractLinearQuadraticModel)
 		processLinearModel!(m, dd, f)
+		
 	elseif(typeof(m.internalModel) <: MathProgBase.SolverInterface.AbstractNonlinearModel)
 		processNonlinearModel!(m, dd, f)
+	
 	else
 		println("Warning: Conic models are not yet supported!")
 	end
+
+	dd.nConstr = MathProgBase.numconstr(m)
 
 	return dd
 
@@ -435,44 +445,65 @@ function printBound(m::Model, i::Int64, epsiActive::Float64, f=STDOUT)
 
 end
 
-function printRows(m::Model, rows::Int64, f=STDOUT)
-	return printRows(m, Array([rows]), f)
+function printRows(m::Model, rows::Int64, f=STDOUT; lite::Bool=false)
+	return printRows(m, Array([rows]), f, lite)
 end
 
-function printRows(m::Model, rows::Array{Int64,1}, f=STDOUT)
+function printRows(m::Model, rows::Array{Int64,1}, f=STDOUT; lite::Bool=false)
 
 	dd = DegenData(m, f)
-	return printRows(m, dd, rows, f)
+	return printRows(m, dd, rows, f, lite)
 
 end
 
-function printRows(m::Model, dd::DegenData, rows::Int64, f=STDOUT)
-	return printRows(m, dd, Array([rows]), f)
+function printRows(m::Model, dd::DegenData, rows::Int64, f=STDOUT; lite::Bool=false)
+	return printRows(m, dd, Array([rows]), f, lite=lite)
 end
 
-function printRows(m::Model, dd::DegenData, rows::Array{Int64,1}, f=STDOUT)
+function printRows(m::Model, dd::DegenData, rows::Array{Int64,1}, f=STDOUT; lite::Bool=false)
 
-	# Modify to cover case where row is actually a bound? See function printRow
-
-	for i = 1:length(rows)
-		r = rows[i]
-		println(f,"**********************************")
-		println(f,"Constraint ",string(r),"...")
-		printEquation(m, dd, r, f)
-		println(f,string(dd.gLB[r])," <= ", string(dd.g[r]), " <= ",string(dd.gUB[r]))
-
-		println(f," ")
-		println(f,"Involved Variables:")
-		k = find(dd.iR .== r)
-
-		for j in unique(dd.jC[k])
-			v = Variable(m,j)
-			print(f,getname(v)," \t")
-			println(f,getlowerbound(v)," <= ",getvalue(v)," <= ",getupperbound(v))
+	if(lite && length(rows) == 1)
+	
+		r = rows[1]
+		
+		if(r <= dd.nConstr)
+			printEquation(m, dd, rows[1], f)
+		else
+			printBound(m, r - dd.nConstr, 1E-6, f)
 		end
+	else
 
-		println(f," ")
+		for i = 1:length(rows)
+			r = rows[i]
+			
+			println(f,"**********************************")
+			
+			if(r <= dd.nConstr)
+					
+				println(f,"Constraint ",string(r),"...")
+				printEquation(m, dd, r, f)
+				println(f,string(dd.gLB[r])," <= ", string(dd.g[r]), " <= ",string(dd.gUB[r]))
 
+				println(f," ")
+				println(f,"Involved Variables:")
+				k = find(dd.iR .== r)
+
+				for j in unique(dd.jC[k])
+					v = Variable(m,j)
+					print(f,getname(v)," \t")
+					println(f,getlowerbound(v)," <= ",getvalue(v)," <= ",getupperbound(v))
+				end
+			
+			else
+				v = r - dd.nConstr
+				println(f,"Bound for variable ",v)
+				printBounds(m, v, 1E-6, f)
+				
+			end
+
+			println(f," ")
+
+		end
 	end
 
 
@@ -487,13 +518,14 @@ function degeneracyHunter(m::Model;
 	includeBounds::Bool = false,
 	includeWeaklyActive::Bool = true,
 	removeFixedVar::Bool = true,
+	onlyCandidateSearch::Bool = true,
 	epsiActive::Float64 = 1E-6,
 	epsiLambda::Float64 = 1E-6,
 	lambdaM::Float64 = 1E5,
 	f=STDOUT)
 
 	ds = DegenSettings(includeBounds, includeWeaklyActive, removeFixedVar,
-		epsiActive, epsiLambda, lambdaM)
+		onlyCandidateSearch, epsiActive, epsiLambda, lambdaM)
 
 	return degeneracyHunter(m, ds, f)
 
@@ -664,17 +696,23 @@ function degeneracyHunter(m::Model, ds::DegenSettings, f)
 		# Where is this used?
 		# sparsityPattern = J_active .!= 0
 
-		sets = Array(IrreducibleDegenerateSet,length(cand))
+		if(!ds.onlyCandidateSearch)
 
-		print(f,"Setting up MILP... ")
-		tic()
-		dh = setupMILP(dd, ds)
-		tm = toq()
-		println(f,string(tm," seconds"))
+			sets = Array(IrreducibleDegenerateSet,length(cand))
 
-		for c = 1:length(cand)
-			sets[c] = solveMILP(dh, dd, ds, c)
-			printIDS(sets[c], m, dd, ds, f);
+			print(f,"Setting up MILP... ")
+			tic()
+			dh = setupMILP(dd, ds)
+			tm = toq()
+			println(f,string(tm," seconds"))
+
+			for c = 1:length(cand)
+				sets[c] = solveMILP(dh, dd, ds, c)
+				printIDS(sets[c], m, dd, ds, f);
+			end
+		
+		else
+			sets = ids
 		end
 
 	else
@@ -1259,7 +1297,7 @@ function printIDS(ids::IrreducibleDegenerateSet, m::Model, dd::DegenData, ds::De
 			s = @sprintf "%.4f" ids.lambda[j]
 			print(f,"l = ", s ,"  \t ")
 
-			printRows(m, dd, j, f)
+			printRows(m, dd, j, f, lite=true)
 		end
 
 		println(f," ")
@@ -1267,7 +1305,7 @@ function printIDS(ids::IrreducibleDegenerateSet, m::Model, dd::DegenData, ds::De
 		println(f,"Involved variables: ")
 
 		r2 = intersect(r, 1:length(dd.gMap))
-		printVariablesInEquation(m, dd, dd.gMap[r], true, true, f)
+		printVariablesInEquation(m, dd, dd.gMap[r2], true, true, f)
 
 		println(f," ")
 
