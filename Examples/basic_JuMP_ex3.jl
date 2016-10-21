@@ -1,6 +1,6 @@
-using JuMP
+# Created by Alex Dowling (alexdowling.net) while at the University of Wisconsin-Madison
 
-##### This file looks at solving an optimization in parallel using pmap()
+##### This example solves an optimization in parallel using pmap()
 # More info: http://julia.readthedocs.org/en/latest/manual/parallel-computing/
 # Use "julia -p n" to start Julia with n 
 
@@ -29,6 +29,9 @@ for i in 1:length(aOpt)
 		P[(i-1)*bN + j] = (aOpt[i],bOpt[j])
 	end
 end
+
+# Display P
+print(P)
 
 # Solve the optimization problem in parallel
 # Note: results is an array of tuples, with the same dimensions as P
