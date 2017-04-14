@@ -3,7 +3,7 @@ module DegeneracyHunter
 export IrreducibleDegenerateSet, DegenSettings, DegenData, printBound, printVariablesInEquation,
 	printIDS, degeneracyHunter, printInfeasibleEquations, printInactiveEquations,
 	checkVarBounds, printRows, ProblemStats, assembleProblemStats, stringProblemStats, printProblemStats,
-	printVariableDiagnostics, round_to_bounds!, checkEquationScaling, printVariables
+	printVariableDiagnostics, round_to_bounds!, checkEquationScaling
 
 importall JuMP
 import MathProgBase
@@ -1174,18 +1174,6 @@ function printRow(m::Model, dd::DegenData, j::Int64, epsiActive::Float64, f=STDO
 
 end
 =#
-
-function printVariables(m::Model, v::Array{Int64,1}, f=STDOUT)
-
-	dd = DegenData(m, f)
-	
-	for i in v
-		printVariable(m, dd, i, f)
-	end
-	
-	return nothing
-
-end
 
 function printVariable(m::Model, dd::DegenData, i::Int64, f=STDOUT)
 
