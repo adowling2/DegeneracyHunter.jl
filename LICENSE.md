@@ -1,6 +1,6 @@
 The DegeneracyHunter.jl package is licensed under the Apache License, Version 2.0:
 
-> Copyright (c) 2017: Alex Dowling.
+> Copyright (c) 2017: Alexander Dowling and contributors.
 > 
 >                                  Apache License
 >                            Version 2.0, January 2004
