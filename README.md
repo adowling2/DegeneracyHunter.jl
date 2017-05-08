@@ -13,6 +13,12 @@ Degeneracy Hunter seeks to find Irreducible Degenerate Sets (IDS) by analyzing t
 
 Alexander W. Dowling and Lorenz T. Biegler (2015). "Degeneracy Hunter: An Algorithm for Determining Irreducible Sets of Degenerate Constraints in Mathematical Programs". 12th International Symposium on Process Systems Engineering and 25th European Symposium on Computer Aided Process Engineering. Ed. by Krist V. Gernaey, Jakob K. Huusom, and Raqul Gani. Computer-Aided Chemical Engineering, Vol. 37, p. 809 - 814. [link](http://www.sciencedirect.com/science/article/pii/B9780444635785501304) [pdf](http://sites.google.wisc.edu/alex-dowling/uploads/ESCAPE25_Dowling.pdf?attredirects=0)
 
+## Installation
+
+```
+Pkg.clone("https://github.com/adowling2/DegeneracyHunter.jl")
+```
+
 ## Example
 
 ```
