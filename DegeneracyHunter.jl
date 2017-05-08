@@ -105,8 +105,10 @@ function DegenData(m::Model, f=STDOUT, status::Symbol=:Unknown)
 	if(typeof(m.internalModel) == MathProgBase.SolverInterface.NonlinearToLPQPBridge)
 		processNonlinearModel!(m, dd, f)
 	
+	# TO DO: Update processLinearModel! to work with quadratic constraints
 	elseif(typeof(m.internalModel) <: MathProgBase.SolverInterface.AbstractLinearQuadraticModel)
-		processLinearModel!(m, dd, f)
+		# processLinearModel!(m, dd, f)
+		processNonlinearModel!(m, dd, f)
 		
 	elseif(typeof(m.internalModel) <: MathProgBase.SolverInterface.AbstractNonlinearModel)
 		processNonlinearModel!(m, dd, f)
@@ -178,6 +180,7 @@ function processNonlinearModel!(m::Model, dd::DegenData, f=STDOUT)
 
 end
 
+# TODO: Update to work with quadratic models.
 function processLinearModel!(m::Model, dd::DegenData, f=STDOUT)
 
 	# Jacobian as a SparseMatrixCSC
@@ -327,6 +330,12 @@ end
 function printInfeasibleEquations(m2::Model, dd::DegenData, epsilon::Float64, f=STDOUT)
 
 	println(f,"Infeasible equations: ")
+
+	#=
+	println("size(dd.g) = ",size(dd.g))
+	println("size(dd.gLB) = ",size(dd.gLB))
+	println("size(dd.gUB) = ",size(dd.gUB))
+	=#
 
 	r = reshape(min(dd.g - dd.gLB, 0) + max(dd.g - dd.gUB, 0),length(dd.g))
 

@@ -1,10 +1,10 @@
 include("../DegeneracyHunter.jl")
 using JuMP
-using Ipopt
-#using AmplNLWriter
+#using Ipopt
+using AmplNLWriter
 
-s = IpoptSolver(bound_relax_factor=0.0)
-#s = AmplNLSolver("ipopt")
+#s = IpoptSolver(bound_relax_factor=0.0)
+s = AmplNLSolver("ipopt")
 
 m = Model(solver=s)
 
