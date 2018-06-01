@@ -4,7 +4,7 @@
 ##############
 ##### Degeneracy Hunter features
 
-function degeneracyHunter(m::Model;
+function degeneracyHunter(m::Model, mySolver;
 	includeBounds::Bool = false,
 	includeWeaklyActive::Bool = true,
 	removeFixedVar::Bool = true,
@@ -15,7 +15,7 @@ function degeneracyHunter(m::Model;
 	f=STDOUT)
 
 	ds = DegenSettings(includeBounds, includeWeaklyActive, removeFixedVar,
-		onlyCandidateSearch, epsiActive, epsiLambda, lambdaM)
+		onlyCandidateSearch, epsiActive, epsiLambda, lambdaM, mySolver)
 
 	return degeneracyHunter(m, ds, f)
 
@@ -223,7 +223,7 @@ function setupMILP(dd::DegenData, ds::DegenSettings)
 	M = ds.lambdaM
 
 	#m2 = Model(solver=GurobiSolver(IntFeasTol=1E-6, NumericFocus=3))
-	m2 = Model()
+	m2 = Model(solver=mySolver)
 	L = 1:dd.nLambda
 	@variable(m2,y[L],Bin)
 	@variable(m2, -M <= lambda[L] <= M)
@@ -293,8 +293,8 @@ function findCandidates(dd::DegenData, ds::DegenSettings, explicit::Bool)
 
 	M = ds.lambdaM
 
-	#m2 = Model(solver=GurobiSolver(IntFeasTol=1E-6, NumericFocus=3))
-	m2 = Model()
+	#m2 = Model(solver=Solver(IntFeasTol=1E-6, NumericFocus=3))
+	m2 = Model(solver=ds.mySolver)
 	L = 1:dd.nLambda
 	@variable(m2, -M - mSmall <= lambda[L] <= M + mSmall)
 	@variable(m2, yPos[i=L], Bin)
