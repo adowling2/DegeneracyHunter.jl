@@ -21,6 +21,7 @@ function checkJacobianScaling(m::Model, dd::DegenData, f=STDOUT)
 	printVariable(m, dd.jC[s_], f)
 	println(f,"Equation: ")
 	printEquation(m, dd, dd.iR[s_], f)
+	printVariablesInEquation(m, dd, dd.iR[s_], true, true, f)
 
 	println(f," ")
 	println(f,"Largest non-zero element in Jacobian = ",dd.J[l_])
@@ -28,6 +29,7 @@ function checkJacobianScaling(m::Model, dd::DegenData, f=STDOUT)
 	printVariable(m, dd.jC[l_], f)
 	println(f,"Equation: ")
 	printEquation(m, dd, dd.iR[l_], f)
+	printVariablesInEquation(m, dd, dd.iR[l_], true, true,  f)
 	println(f," ")
 
 end

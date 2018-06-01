@@ -19,10 +19,11 @@ type DegenSettings
 	epsiActive::Float64
 	epsiLambda::Float64
 	lambdaM::Float64
+	mySolver
 end
 
-function DegenSettings()
-	return DegenSettings(false, true, true, true, 1E-6, 1E-6, 1.0E5)
+function DegenSettings(mySolver)
+	return DegenSettings(false, true, true, true, 1E-6, 1E-6, 1.0E5, mySolver)
 end
 
 type DegenData
