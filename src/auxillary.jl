@@ -11,8 +11,8 @@ function checkJacobianScaling(m::Model, dd::DegenData, f=STDOUT)
 	nz_ = find(dd.J .!= 0)
 
 	# Determine location of smallest and largest elements
-	s_ = nz_[indmin(abs(dd.J[nz_]))]
-	l_ = indmax(abs(dd.J))
+	s_ = nz_[indmin(abs.(dd.J[nz_]))]
+	l_ = indmax(abs.(dd.J))
 
 
 	println(f," ")
@@ -36,7 +36,7 @@ end
 
 function checkActiveJacobianRows(m::Model, dd::DegenData, f=STDOUT)
 	for i = 1:dd.nLambda
-		if(sum(abs(dd.J_active[i,:])) < 1E-4)
+		if(sum(abs.(dd.J_active[i,:])) < 1E-4)
 			println(f,"Warning!!! (Near) singular Jacobian row for ")
 			printRows(m, dd, i, f)
 			println(f," ")
@@ -48,8 +48,8 @@ end
 
 function checkActiveJacobianEntries(m::Model, dd::DegenData, f=STDOUT)
 	for i = 1:size(dd.J_active,1)
-		nan_ = sum(isnan(dd.J_active[i,:])) > 0
-		inf_ = sum(isinf(dd.J_active[i,:])) > 0
+		nan_ = sum(isnan.(dd.J_active[i,:])) > 0
+		inf_ = sum(isinf.(dd.J_active[i,:])) > 0
 		if(nan_ || inf_)
 			if(nan_)
 				print(f,"NaN")

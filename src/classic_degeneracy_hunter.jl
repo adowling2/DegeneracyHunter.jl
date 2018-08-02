@@ -51,20 +51,20 @@ function degeneracyHunter(m::Model, ds::DegenSettings, f)
 # Determine which constraints and bounds are active
 
 	# Grab all equality constraints and inequality constraints that are active
-	gLow = (abs(dd.gLB - dd.g) .< ds.epsiActive)
-	gUp = (abs(dd.gUB - dd.g) .< ds.epsiActive)
-	gEql = (abs(dd.gUB - dd.gLB) .< ds.epsiActive)
+	gLow = (abs.(dd.gLB - dd.g) .< ds.epsiActive)
+	gUp = (abs.(dd.gUB - dd.g) .< ds.epsiActive)
+	gEql = (abs.(dd.gUB - dd.gLB) .< ds.epsiActive)
 
-	gActive = gLow | gUp | gEql
+	gActive = gLow .| gUp .| gEql
 
-	# Tip: "$" is the bitwise xor operator
-	actIneql = sum(gLow $ gUp)
+	# Tip: "$" was the bitwise xor operator; ⊻ is the new operator.
+	actIneql = sum(xor.(gLow, gUp))
 	eql = sum(gEql)
 	totalIneql = length(dd.g) - eql
 	inactiveIneql = totalIneql - actIneql
 
 	println(f," ")
-	println(f,"(Weakly) Active Inequality Constraints: ",string(sum(gLow $ gUp)))
+	println(f,"(Weakly) Active Inequality Constraints: ",string(actIneql))
 	println(f,"Inactive Inequality Constraints: ",string(inactiveIneql))
 	println(f,"Equality Constraints: ",string(eql))
 	println(f," ")
@@ -79,9 +79,9 @@ function degeneracyHunter(m::Model, ds::DegenSettings, f)
 
 	end
 
-	vFixed = abs(m.colLower - m.colUpper) .< ds.epsiActive
+	vFixed = abs.(m.colLower - m.colUpper) .< ds.epsiActive
 
-	bActive = (abs(m.colLower - dd.x) .< ds.epsiActive) | (abs(m.colUpper - dd.x) .< ds.epsiActive)
+	bActive = (abs.(m.colLower - dd.x) .< ds.epsiActive) .| (abs.(m.colUpper - dd.x) .< ds.epsiActive)
 
 	println(f,"Variables: ",string(length(dd.x)))
 	println(f,"(Weakly) Active Variable Bounds: ",string(sum(bActive)))
@@ -104,7 +104,7 @@ function degeneracyHunter(m::Model, ds::DegenSettings, f)
 
 	# Remove fixed variables from bActive
 	if(ds.removeFixedVar)
-		bActive = bActive & !vFixed
+		bActive = bActive .& .!vFixed
 	end
 
 # Add only active bounds to Jacobian
@@ -136,8 +136,8 @@ function degeneracyHunter(m::Model, ds::DegenSettings, f)
 	dd.gMap = find(gActive)
 
 	if(ds.removeFixedVar)
-		dd.vMap = find(!vFixed)
-		cols = !vFixed
+		dd.vMap = find(.!vFixed)
+		cols = .!vFixed
 	else
 		dd.vMap = 1:nVar
 		cols = trues(nVar)
@@ -206,7 +206,7 @@ function degeneracyHunter(m::Model, ds::DegenSettings, f)
 		end
 
 	else
-		sets = Array(IrreducibleDegenerateSet,0)
+		sets = Array{IrreducibleDegenerateSet}(0)
 	end
 
 	println(f," ")
@@ -348,7 +348,7 @@ function findCandidates(dd::DegenData, ds::DegenSettings, explicit::Bool)
 
 	status = solve(m2)
 
-	c = Array(Int64,0)
+	c = Array{Int64}(0)
 
 	if(status == :Optimal)
 

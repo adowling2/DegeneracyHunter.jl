@@ -84,7 +84,7 @@ end
 ecost = Dict{String,Float64}("U1"=>1.5, "U2"=>1.0)
 
 # Set total feed to one
-@constraint(m, sum{f[s], s in feeds} == 1)
+@constraint(m, sum(f[s] for s in feeds) == 1)
 
 # Calculate purity of A
 @constraint(m, purityA*sum(sum(f[s] for s in outletV[u]) for u in U) == sum(sum(fc[s,"A"] for s in outletV[u]) for u in U))
