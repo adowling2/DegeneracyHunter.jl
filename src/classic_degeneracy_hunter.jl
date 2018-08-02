@@ -358,7 +358,7 @@ function findCandidates(dd::DegenData, ds::DegenSettings, explicit::Bool)
 			lmbd[i] = lmbd_[i]
 		end
 
-		abs_lmbd = abs(lmbd)
+		abs_lmbd = abs.(lmbd)
 
 		lmax = 0
 		for i = L
