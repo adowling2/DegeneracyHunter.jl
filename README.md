@@ -119,9 +119,9 @@ x[3] = x[3] = -1.0  	 [0.0,5.0]
 ```
 
 ### Check for degenerate constraints
-Use default settings
+Use default settings. Note that ```GurobiSolver()``` may be replaced with any MILP solver supported in JuMP.
 ```
-DegeneracyHunter.degeneracyHunter(m)
+DegeneracyHunter.degeneracyHunter(m, GurobiSolver())
 ```
 
 **Output:**
