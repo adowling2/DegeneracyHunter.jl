@@ -79,7 +79,7 @@ function assembleProblemStats(m::Model, status=:Unsolved, solveTime=0.0)
 
 	return ProblemStats( sum(cont), # Continuous
 						sum(cont .& fixed), # Fixed
-						sum(cont .& !fixed), # Free
+						sum(cont .& .!fixed), # Free
 						sum(cont .& lwr .& .!upr), # Only lower bounded
 						sum(cont .& .!lwr .& upr), # Only upper bounded
 						sum(cont .& lwr .& upr .& .!fixed), # Lower and upper bounded
@@ -99,7 +99,7 @@ function assembleProblemStats(m::Model, status=:Unsolved, solveTime=0.0)
 						nNonLin, # Nonlinear constraints
 						sum(nonlin .& eql),
 						sum(nonlin .& ineql .& active),
-						sum(nonlin .& ineql & .!active),
+						sum(nonlin .& ineql .& .!active),
 						status, # Solver status
 						solveTime # Solver time
 						)

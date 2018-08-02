@@ -156,11 +156,28 @@ function degeneracyHunter(m::Model, ds::DegenSettings, f)
 	dd.nVarActive = sum(cols)
 
 # Step 3: Check if any equations/bounds are degenerate themselves
+# 			of if any Jacobian entries are NaN or Inf
 
 	checkActiveJacobianRows(m, dd, f)
 	checkActiveJacobianEntries(m, dd, f)
 
 	flush(f)
+
+# Step 3.5: Perform SVD.
+
+	print("Computing SVD... ")
+	tic()
+	# This is ugly, as it converts dd.J_active from a sparse to dense matrix for SVD.
+	# TODO: Use a sparse SVD implementation.
+	F = LinAlg.svdfact(Matrix(dd.J_active))
+	tm = toq()
+	println(f, string(tm," seconds"))
+	
+	println(" ")
+	println(f,"Largest Singular Value: ",F[:S][1])
+	println(f,"Smallest Singular Value: ",F[:S][end])
+	
+	println(" ")
 
 # Step 4: Identify candidate equations
 
