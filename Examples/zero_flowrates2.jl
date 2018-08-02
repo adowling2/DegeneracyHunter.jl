@@ -12,16 +12,16 @@ C = ["A", "B"]
 U = ["U1", "U2", "U3"]
 
 # Define stream/unit connectivity using dictionaries
-inlets = Dict{ASCIIString,Integer}("U1"=>2, "U2"=>5, "U3"=>4)
-outletV = Dict{ASCIIString,Integer}("U1"=>3, "U2"=>6, "U3"=>8)
-outletL = Dict{ASCIIString,Integer}("U1"=>4, "U2"=>7, "U3"=>9)
+inlets = Dict{String,Integer}("U1"=>2, "U2"=>5, "U3"=>4)
+outletV = Dict{String,Integer}("U1"=>3, "U2"=>6, "U3"=>8)
+outletL = Dict{String,Integer}("U1"=>4, "U2"=>7, "U3"=>9)
 
 # steams
 feeds = [2, 5]
 
 # Equilibrium coefficients
 
-K = Dict{Tuple{ASCIIString, ASCIIString}, Float64}(
+K = Dict{Tuple{String, String}, Float64}(
 		("U1","A")=>1.008,		("U1","B")=>0.9,
 		("U2","A")=>1.099,		("U2","B")=>0.9,
 		("U3","A")=>1.093,		("U3","B")=>0.9	)	 
@@ -83,19 +83,19 @@ end
 @variable(m, 0.9 <= recoveryA <= 1.0)
 
 # Equipment cost
-ecost = Dict{AbstractString,Float64}("U1"=>1.5, "U2"=>1.0, "U3"=>0.5)
+ecost = Dict{String,Float64}("U1"=>1.5, "U2"=>1.0, "U3"=>0.5)
 
 # Set total feed to one
-@constraint(m, sum{f[s], s in feeds} == 1)
+@constraint(m, sum(f[s] for s in feeds) == 1)
 
 # Calculate purity of A
-@constraint(m, purityA*sum{sum{f[s], s in outletV[u]}, u in U} == sum{sum{fc[s,"A"], s in outletV[u]}, u in U})
+@constraint(m, purityA*sum(sum(f[s] for s in outletV[u]) for u in U) == sum(sum(fc[s,"A"] for s in outletV[u]) for u in U))
 
 # Calculate recovery of A
-@constraint(m, recoveryA == sum{sum{fc[s,"A"], s in outletV[u]}, u in U} / feedflow["A"])
+@constraint(m, recoveryA == sum(sum(fc[s,"A"] for s in outletV[u]) for u in U) / feedflow["A"])
 
 # Objective
-@objective(m, Min, sum{sum{f[s], s in inlets[u]}*ecost[u], u in U} - 100*purityA)
+@objective(m, Min, sum(sum(f[s] for s in inlets[u])*ecost[u] for u in U) - 100*purityA)
 
 for s in feeds
 	for c in C
