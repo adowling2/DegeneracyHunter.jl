@@ -66,40 +66,40 @@ function assembleProblemStats(m::Model, status=:Unsolved, solveTime=0.0)
 	MathProgBase.eval_g(d,g,x)
 
 	eql = (gUB - gLB) .< epsilon
-	ineql = !eql
-	active = ((gUB - g) .< epsilon) | ((g - gLB) .< epsilon)
+	ineql = .!eql
+	active = ((gUB - g) .< epsilon) .| ((g - gLB) .< epsilon)
 
 	N = 1:n
 
 	lin = N .<= nLin
-	quad = (N .> nLin) & (N .<= nLin + nQuad)
+	quad = (N .> nLin) .& (N .<= nLin + nQuad)
 	nonlin = N .> nLin + nQuad
 
-	activeBnds = ((x - m.colLower) .< epsilon) | ((m.colUpper - x) .< epsilon)
+	activeBnds = ((x - m.colLower) .< epsilon) .| ((m.colUpper - x) .< epsilon)
 
 	return ProblemStats( sum(cont), # Continuous
-						sum(cont & fixed), # Fixed
-						sum(cont & !fixed), # Free
-						sum(cont & lwr & !upr), # Only lower bounded
-						sum(cont & !lwr & upr), # Only upper bounded
-						sum(cont & lwr & upr & !fixed), # Lower and upper bounded
-						sum(cont & !lwr & !upr), # Unbounded
-						sum(activeBnds & !fixed), # Number of active bounds
+						sum(cont .& fixed), # Fixed
+						sum(cont .& !fixed), # Free
+						sum(cont .& lwr .& .!upr), # Only lower bounded
+						sum(cont .& .!lwr .& upr), # Only upper bounded
+						sum(cont .& lwr .& upr .& .!fixed), # Lower and upper bounded
+						sum(cont .& .!lwr .& .!upr), # Unbounded
+						sum(activeBnds .& .!fixed), # Number of active bounds
 						sum(bnry), # Binary
-						sum(bnry & fixed), # Binary fixed
-						sum(bnry & !fixed), # Binary free
+						sum(bnry .& fixed), # Binary fixed
+						sum(bnry .& .!fixed), # Binary free
 						nLin, # Linear constraints
-						sum(lin & eql),
-						sum(lin & ineql & active),
-						sum(lin & ineql & !active),
+						sum(lin .& eql),
+						sum(lin .& ineql .& active),
+						sum(lin .& ineql .& .!active),
 						nQuad, # Quadratic constraints
-						sum(quad & eql),
-						sum(quad & ineql & active),
-						sum(quad & ineql & !active),
+						sum(quad .& eql),
+						sum(quad .& ineql .& active),
+						sum(quad .& ineql .& .!active),
 						nNonLin, # Nonlinear constraints
-						sum(nonlin & eql),
-						sum(nonlin & ineql & active),
-						sum(nonlin & ineql & !active),
+						sum(nonlin .& eql),
+						sum(nonlin .& ineql .& active),
+						sum(nonlin .& ineql & .!active),
 						status, # Solver status
 						solveTime # Solver time
 						)
