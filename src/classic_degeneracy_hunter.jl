@@ -228,13 +228,13 @@ function setupMILP(dd::DegenData, ds::DegenSettings)
 	@variable(m2,y[L],Bin)
 	@variable(m2, -M <= lambda[L] <= M)
 
-	@constraint(m2, degen[j=1:dd.nVarActive], sum{dd.J_active[i,j]*lambda[i], i=L} == 0)
+	@constraint(m2, degen[j=1:dd.nVarActive], sum(dd.J_active[i,j]*lambda[i] for i in L) == 0)
 
 
 	@constraint(m2, lower[i=L], -M*y[i] <= lambda[i])
 	@constraint(m2, upper[i=L],  lambda[i] <= M*y[i])
 
-	@objective(m2, Min, sum{y[i],i=L})
+	@objective(m2, Min, sum(y[i] for i in L))
 
 	return m2
 
@@ -315,9 +315,9 @@ function findCandidates(dd::DegenData, ds::DegenSettings, explicit::Bool)
 		@constraint(m2, negativeLow[i=L], -M*yNeg[i] <= lambda[i])
 		@constraint(m2, negativeUp[i=L], lambda[i] <= -mSmall*yNeg[i] + M*(1-yNeg[i]))
 
-		@constraint(m2, sum{ySelect[i], i=L} >= 1)
+		@constraint(m2, sum(ySelect[i] for i in L) >= 1)
 
-		@objective(m2, Min, sum{yPos[i] + yNeg[i], i=L})
+		@objective(m2, Min, sum(yPos[i] + yNeg[i] for i in L))
 
 	else
 		@variable(m2, 0 <= bound[i=L] <= M + mSmall)
@@ -339,12 +339,12 @@ function findCandidates(dd::DegenData, ds::DegenSettings, explicit::Bool)
 		@constraint(m2, upper[i=L], lambda[i] <= bound[i])
 
 		# At least one constraint must be in the degenerate set
-		@constraint(m2, sum{yPos[i] + yNeg[i], i=L} >= 1)
+		@constraint(m2, sum(yPos[i] + yNeg[i] for i in L) >= 1)
 
-		@objective(m2, Min, sum{bound[i], i=L})
+		@objective(m2, Min, sum(bound[i] for i in L))
 	end
 
-	@constraint(m2, degen[j=1:dd.nVarActive], sum{dd.J_active[i,j]*lambda[i], i=L} == 0)
+	@constraint(m2, degen[j=1:dd.nVarActive], sum(dd.J_active[i,j]*lambda[i] for i in L) == 0)
 
 	status = solve(m2)
 

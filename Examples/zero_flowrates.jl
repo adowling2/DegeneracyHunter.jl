@@ -12,23 +12,23 @@ C = ["A", "B"]
 U = ["U1", "U2"]
 
 # Define stream/unit connectivity using dictionaries
-inlets = Dict{AbstractString,Integer}("U1"=>2, "U2"=>5)
-outletV = Dict{AbstractString,Integer}("U1"=>3, "U2"=>6)
-outletL = Dict{AbstractString,Integer}("U1"=>4, "U2"=>7)
+inlets = Dict{String,Integer}("U1"=>2, "U2"=>5)
+outletV = Dict{String,Integer}("U1"=>3, "U2"=>6)
+outletL = Dict{String,Integer}("U1"=>4, "U2"=>7)
 
 # steams
 feeds = [2, 5]
 
 # Equilibrium coefficients
 
-K = Dict{Tuple{AbstractString, AbstractString}, Float64}(
+K = Dict{Tuple{String, String}, Float64}(
 	("U1","A")=>1.008,		("U1","B")=>0.9,
 	("U2","A")=>1.099,		("U2","B")=>0.9 )	 
 
 		
 # Feed flowrate specification
 # (for components, same for all feed streams)
-feedflow = Dict{AbstractString, Float64}("A"=>0.55, "B"=>0.45)
+feedflow = Dict{String, Float64}("A"=>0.55, "B"=>0.45)
 
 # Define model
 m = Model(solver=IpoptSolver())
@@ -64,7 +64,7 @@ for u in U
 	end
 	
 	# Unit summation (Rachford-Rice equation)
-	@constraint(m, sum{x[v,c] - x[l,c], c in C} == 0)
+	@constraint(m, sum(x[v,c] - x[l,c] for c in C) == 0)
 	
 end
 
@@ -81,19 +81,19 @@ end
 @variable(m, 0.551 <= recoveryA <= 1.0)
 
 # Equipment cost
-ecost = Dict{AbstractString,Float64}("U1"=>1.5, "U2"=>1.0)
+ecost = Dict{String,Float64}("U1"=>1.5, "U2"=>1.0)
 
 # Set total feed to one
 @constraint(m, sum{f[s], s in feeds} == 1)
 
 # Calculate purity of A
-@constraint(m, purityA*sum{sum{f[s], s in outletV[u]}, u in U} == sum{sum{fc[s,"A"], s in outletV[u]}, u in U})
+@constraint(m, purityA*sum(sum(f[s] for s in outletV[u]) for u in U) == sum(sum(fc[s,"A"] for s in outletV[u]) for u in U))
 
 # Calculate recovery of A
-@constraint(m, recoveryA == sum{sum{fc[s,"A"], s in outletV[u]}, u in U} / feedflow["A"])
+@constraint(m, recoveryA == sum(sum(fc[s,"A"] for s in outletV[u]) for u in U) / feedflow["A"])
 
 # Objective
-@objective(m, Min, sum{sum{f[s], s in inlets[u]}*ecost[u], u in U} - 100*purityA)
+@objective(m, Min, sum(sum(f[s] for s in inlets[u])*ecost[u] for u in U) - 100*purityA)
 
 for s in feeds
 	for c in C
