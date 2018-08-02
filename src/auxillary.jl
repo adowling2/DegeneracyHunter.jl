@@ -170,7 +170,7 @@ end
 function printVariablesInEquation(m::Model, dd::DegenData, r::Array{Int64,1}, printVarNumber::Bool, printVarBounds::Bool=true, f=STDOUT)
 
 	if(length(r) > 1)
-		k = Array(Int64,0)
+		k = Array{Int64}(0)
 
 		for i = 1:length(r)
 			t = find(dd.iR .== r[i])
@@ -237,7 +237,7 @@ function printIDS(ids::IrreducibleDegenerateSet, m::Model, dd::DegenData, ds::De
 
 		nLambda = length(ids.lambda)
 
-		r = find(abs(ids.lambda) .> epsiLambda)
+		r = find(abs.(ids.lambda) .> epsiLambda)
 
 		for j = r
 
