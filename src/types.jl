@@ -20,10 +20,11 @@ type DegenSettings
 	epsiLambda::Float64
 	lambdaM::Float64
 	mySolver
+	printSmallestSVD::Float64
 end
 
 function DegenSettings(mySolver)
-	return DegenSettings(false, true, true, true, 1E-6, 1E-6, 1.0E5, mySolver)
+	return DegenSettings(false, true, true, true, 1E-6, 1E-6, 1.0E5, mySolver, 0.0)
 end
 
 type DegenData
