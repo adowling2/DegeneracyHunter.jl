@@ -12,10 +12,12 @@ function degeneracyHunter(m::Model, mySolver;
 	epsiActive::Float64 = 1E-6,
 	epsiLambda::Float64 = 1E-6,
 	lambdaM::Float64 = 1E5,
+	printThresholdSmallestSingularVector = 0.0,
 	f=STDOUT)
 
 	ds = DegenSettings(includeBounds, includeWeaklyActive, removeFixedVar,
-		onlyCandidateSearch, epsiActive, epsiLambda, lambdaM, mySolver)
+		onlyCandidateSearch, epsiActive, epsiLambda, lambdaM, mySolver, 
+		printThresholdSmallestSingularVector)
 
 	return degeneracyHunter(m, ds, f)
 
@@ -169,6 +171,11 @@ function degeneracyHunter(m::Model, ds::DegenSettings, f)
 	tic()
 	# This is ugly, as it converts dd.J_active from a sparse to dense matrix for SVD.
 	# TODO: Use a sparse SVD implementation.
+	
+	# U*diagm(S)*V' restores matrix
+	# Recall for J_active:
+	#   row = constraints
+	#   columns = variables
 	F = LinAlg.svdfact(Matrix(dd.J_active))
 	tm = toq()
 	println(f, string(tm," seconds"))
@@ -176,8 +183,33 @@ function degeneracyHunter(m::Model, ds::DegenSettings, f)
 	println(" ")
 	println(f,"Largest Singular Value: ",F[:S][1])
 	println(f,"Smallest Singular Value: ",F[:S][end])
+
+	# Sort elements of U[:,end] from largest to smallest
+	if ds.printSmallestSVD > 0
 	
-	println(" ")
+		println("Considered left singular vector for smallest singular value...")
+		println("Sorted absolute value of elements from largest to smallest...")
+		sigma_sorted = sortperm(abs.(F[:U][:,end]),rev=true)
+	
+		k = 1
+		norm_total = 0
+		norm_total_cutoff = (ds.printSmallestSVD)^2
+	
+		while k <= length(sigma_sorted) && norm_total <= norm_total_cutoff
+			u_temp = F[:U][sigma_sorted[k],end]
+			println("\nExamining U[",k,",end] = ",u_temp)
+			printEquation(m, dd, sigma_sorted[k], f)
+			printVariablesInEquation(m, dd, sigma_sorted[k], true, true, f)
+		
+			k = k + 1
+			norm_total = norm_total + u_temp^2
+		
+			println("Fraction singular vector examined = ",round(100*sqrt(norm_total),2),"%")
+		
+		end
+	
+		println(" ")
+	end
 
 # Step 4: Identify candidate equations
 
